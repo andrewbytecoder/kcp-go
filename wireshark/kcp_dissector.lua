@@ -77,11 +77,12 @@ function kcp_protocol.dissector(buffer, pinfo, tree)
         local cmd_name = get_cmd_name(cmd_val) -- 这里也绝不会再返回 nil
         local data_len = len_buf:le_int()
 
+        --data_len 解析有问题，需要根据具体协议进行修改data_len的解析方式
         -- 边界检查：确保数据长度不会超出 buffer 剩余部分，防止死循环或崩溃
-        if offset + 24 + data_len > buffer:len() then
-            -- 数据不完整，跳出循环或标记错误
-            break
-        end
+        --if offset + 24 + data_len > buffer:len() then
+        -- 数据不完整，跳出循环或标记错误
+        --     break
+        -- end
 
         local tree_title =
         string.format(
@@ -93,7 +94,7 @@ function kcp_protocol.dissector(buffer, pinfo, tree)
                 data_len
         )
 
-        local subtree = tree:add(kcp_protocol, buffer(offset, 24 + data_len), tree_title)
+        local subtree = tree:add(kcp_protocol, buffer(offset), tree_title)
 
         -- 添加字段到树
         subtree:add_le(conv, conv_buf)
@@ -103,11 +104,11 @@ function kcp_protocol.dissector(buffer, pinfo, tree)
         subtree:add_le(ts, buffer(offset + 8, 4))
         subtree:add_le(sn, sn_buf)
         subtree:add_le(una, buffer(offset + 16, 4))
-        subtree:add_le(len, len_buf)
+        subtree:add_le(len, data_len)
 
         -- 如果有负载数据，也可以尝试添加
         if data_len > 0 then
-            subtree:add(buffer(offset + 24, data_len), "Data (" .. data_len .. " bytes)")
+            -- subtree:add(buffer(offset + 24, data_len), "Data (" .. data_len .. " bytes)")
         end
 
         offset = offset + 24 + data_len
