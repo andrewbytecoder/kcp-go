@@ -185,6 +185,21 @@ type (
 	}
 )
 
+// NewEmptyUdpSession create a new udp session for client or server
+// 创建一个空的 udp session，用于解析客户端传进来的udP数据
+func NewEmptyUdpSession(block BlockCrypt) *UDPSession {
+	sess := new(UDPSession)
+	sess.die = make(chan struct{})
+	sess.chReadEvent = make(chan struct{}, 1)
+	sess.chWriteEvent = make(chan struct{}, 1)
+	sess.chSocketReadError = make(chan struct{})
+	sess.chSocketWriteError = make(chan struct{})
+	sess.chPostProcessing = make(chan sendRequest, devBacklog)
+	sess.block = block
+	sess.recvbuf = make([]byte, mtuLimit)
+	return sess
+}
+
 // newUDPSession create a new udp session for client or server
 func newUDPSession(conv uint32, dataShards, parityShards int, l *Listener, conn net.PacketConn, ownConn bool, remote net.Addr, block BlockCrypt) *UDPSession {
 	sess := new(UDPSession)
@@ -971,6 +986,154 @@ func (s *UDPSession) packetInput(data []byte) {
 
 // kcpInput inputs a decrypted and crc32-checked packet into kcp with FEC handling
 func (s *UDPSession) kcpInput(data []byte) {
+	atomic.AddUint64(&DefaultSnmp.InPkts, 1)
+	atomic.AddUint64(&DefaultSnmp.InBytes, uint64(len(data)))
+
+	// 16bit kcp cmd [81-84] and frg [0-255] will not overlap with FEC type 0x00f1 0x00f2
+	fecFlag := binary.LittleEndian.Uint16(data[4:])
+
+	switch fecFlag {
+	case typeData, typeParity: // packet with FEC
+		if len(data) < fecHeaderSizePlus2 {
+			atomic.AddUint64(&DefaultSnmp.InErrs, 1)
+			return
+		}
+
+		var kcpInErrors uint64
+		f := fecPacket(data)
+
+		// lock
+		s.mu.Lock()
+		defer s.mu.Unlock()
+
+		// if fecDecoder is not initialized, create one with default parameter
+		// lazy initialization
+		if s.fecDecoder == nil {
+			s.fecDecoder = newFECDecoder(1, 1)
+		}
+
+		// KCP input for data packets
+		// only data packets are fed into kcp directly
+		// parity packets are only used for recovery
+		if f.flag() == typeData {
+			if ret := s.kcp.Input(data[fecHeaderSizePlus2:], IKCP_PACKET_REGULAR, s.ackNoDelay); ret != 0 {
+				kcpInErrors++
+			}
+		}
+
+		// FEC decoding
+		// If there're some packets recovered from FEC, feed them into kcp
+		recovers := s.fecDecoder.decode(f)
+		for _, r := range recovers {
+			if len(r) >= 2 { // must be larger than 2bytes
+				sz := binary.LittleEndian.Uint16(r)
+				if int(sz) <= len(r) && sz >= 2 {
+					if ret := s.kcp.Input(r[2:sz], IKCP_PACKET_FEC, s.ackNoDelay); ret != 0 {
+						kcpInErrors++
+					}
+				}
+			}
+			// recycle the buffer
+			defaultBufferPool.Put(r)
+		}
+
+		// to notify the readers to receive the data if there's any
+		if n := s.kcp.PeekSize(); n > 0 {
+			s.notifyReadEvent()
+		}
+
+		// to notify the writers if the window size allows to send more packets
+		// and the remote window size is not full.
+		waitsnd := s.kcp.WaitSnd()
+		if waitsnd < int(s.kcp.snd_wnd) {
+			s.notifyWriteEvent()
+		}
+
+		if kcpInErrors > 0 {
+			atomic.AddUint64(&DefaultSnmp.KCPInErrors, kcpInErrors)
+		}
+	case typeOOB:
+		// Count received OOB packet
+		atomic.AddUint64(&DefaultSnmp.OOBPackets, 1)
+		// If an OOB callback is registered, invoke it synchronously.
+		// The callback is responsible for ensuring non-blocking behavior.
+		if callback := s.callbackForOOB.Load(); callback != nil {
+			// Data layout: | FEC header (fecHeaderSizePlus2) | conv (4B) | OOB payload |
+			callback.(OOBCallBackType)(data[fecHeaderSizePlus2+convSize:])
+		}
+	default: // packet without FEC
+		s.mu.Lock()
+		defer s.mu.Unlock()
+
+		if ret := s.kcp.Input(data, IKCP_PACKET_REGULAR, s.ackNoDelay); ret != 0 {
+			atomic.AddUint64(&DefaultSnmp.KCPInErrors, 1)
+		}
+
+		if n := s.kcp.PeekSize(); n > 0 {
+			s.notifyReadEvent()
+		}
+
+		waitsnd := s.kcp.WaitSnd()
+		if waitsnd < int(s.kcp.snd_wnd) {
+			s.notifyWriteEvent()
+		}
+		return
+	}
+}
+
+// PcapPacketInput is the entry point for incoming packets.
+// It handles decryption and CRC32 verification before passing data to kcpInput.
+//
+// Pipeline: Network -> [Decrypt] -> [CRC32] -> kcpInput
+func (s *UDPSession) PcapPacketInput(data []byte) error {
+	switch block := s.block.(type) {
+	case nil:
+	case *aeadCrypt:
+		nonceSize := block.NonceSize()
+		if len(data) < nonceSize+block.Overhead() {
+			return errors.New("decryption failed")
+		}
+
+		nonce := data[:nonceSize]
+		ciphertext := data[nonceSize:]
+
+		plaintext, err := block.Open(ciphertext[:0], nonce, ciphertext, nil)
+		if err != nil {
+			atomic.AddUint64(&DefaultSnmp.InCsumErrors, 1)
+			return errors.New("decryption failed")
+		}
+
+		data = plaintext
+	default:
+		// decryption and crc32 check
+		if len(data) < cryptHeaderSize {
+			return errors.New("decryption failed")
+		}
+
+		block.Decrypt(data, data)
+		data = data[nonceSize:]
+
+		checksum := crc32.ChecksumIEEE(data[crcSize:])
+		if checksum != binary.LittleEndian.Uint32(data) {
+			atomic.AddUint64(&DefaultSnmp.InCsumErrors, 1)
+			return errors.New("CRC32 check failed")
+		}
+
+		data = data[crcSize:]
+	}
+
+	// basic check for minimum packet size
+	// NOTE: OOB allows sending small packets and even empty packets.
+	if len(data) < min(IKCP_OVERHEAD, fecHeaderSizePlus2+convSize) {
+		atomic.AddUint64(&DefaultSnmp.KCPInErrors, 1)
+		return errors.New("minimum packet size check failed")
+	}
+
+	return s.pcapKcpInput(data)
+}
+
+// kcpInput inputs a decrypted and crc32-checked packet into kcp with FEC handling
+func (s *UDPSession) pcapKcpInput(data []byte) error {
 	atomic.AddUint64(&DefaultSnmp.InPkts, 1)
 	atomic.AddUint64(&DefaultSnmp.InBytes, uint64(len(data)))
 
