@@ -6,11 +6,11 @@ import (
 	"log"
 	"net"
 
+	"github.com/andrewbytecoder/kcp-go/pkg/kcp"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/pcap"
 	"github.com/spf13/cobra"
-	"github.com/xtaci/kcp-go/v5/pkg/kcp"
 	"golang.org/x/crypto/pbkdf2"
 )
 
@@ -42,8 +42,8 @@ func New() *Kcp {
 	k := Kcp{}
 
 	key := pbkdf2.Key([]byte("demo pass"), []byte("demo salt"), 1024, 32, sha1.New)
-	block, _ := kcp2.NewAESBlockCrypt(key)
-	k.udpSession = kcp2.kcp.NewEmptyUdpSession(block)
+	block, _ := kcp.NewAESBlockCrypt(key)
+	k.udpSession = kcp.NewEmptyUdpSession(block)
 
 	return &k
 }
