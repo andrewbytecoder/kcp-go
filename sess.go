@@ -51,6 +51,7 @@ import (
 	"encoding/binary"
 	"hash/crc32"
 	"io"
+	"log"
 	"net"
 	"sync"
 	"sync/atomic"
@@ -1144,7 +1145,7 @@ func (s *UDPSession) pcapKcpInput(data []byte) error {
 	case typeData, typeParity: // packet with FEC
 		if len(data) < fecHeaderSizePlus2 {
 			atomic.AddUint64(&DefaultSnmp.InErrs, 1)
-			return
+			return errors.New("packet size check failed")
 		}
 
 		var kcpInErrors uint64
@@ -1164,7 +1165,7 @@ func (s *UDPSession) pcapKcpInput(data []byte) error {
 		// only data packets are fed into kcp directly
 		// parity packets are only used for recovery
 		if f.flag() == typeData {
-			if ret := s.kcp.Input(data[fecHeaderSizePlus2:], IKCP_PACKET_REGULAR, s.ackNoDelay); ret != 0 {
+			if ret := s.Input(data[fecHeaderSizePlus2:], IKCP_PACKET_REGULAR, s.ackNoDelay); ret != 0 {
 				kcpInErrors++
 			}
 		}
@@ -1176,7 +1177,7 @@ func (s *UDPSession) pcapKcpInput(data []byte) error {
 			if len(r) >= 2 { // must be larger than 2bytes
 				sz := binary.LittleEndian.Uint16(r)
 				if int(sz) <= len(r) && sz >= 2 {
-					if ret := s.kcp.Input(r[2:sz], IKCP_PACKET_FEC, s.ackNoDelay); ret != 0 {
+					if ret := s.Input(r[2:sz], IKCP_PACKET_FEC, s.ackNoDelay); ret != 0 {
 						kcpInErrors++
 					}
 				}
@@ -1185,21 +1186,6 @@ func (s *UDPSession) pcapKcpInput(data []byte) error {
 			defaultBufferPool.Put(r)
 		}
 
-		// to notify the readers to receive the data if there's any
-		if n := s.kcp.PeekSize(); n > 0 {
-			s.notifyReadEvent()
-		}
-
-		// to notify the writers if the window size allows to send more packets
-		// and the remote window size is not full.
-		waitsnd := s.kcp.WaitSnd()
-		if waitsnd < int(s.kcp.snd_wnd) {
-			s.notifyWriteEvent()
-		}
-
-		if kcpInErrors > 0 {
-			atomic.AddUint64(&DefaultSnmp.KCPInErrors, kcpInErrors)
-		}
 	case typeOOB:
 		// Count received OOB packet
 		atomic.AddUint64(&DefaultSnmp.OOBPackets, 1)
@@ -1213,20 +1199,83 @@ func (s *UDPSession) pcapKcpInput(data []byte) error {
 		s.mu.Lock()
 		defer s.mu.Unlock()
 
-		if ret := s.kcp.Input(data, IKCP_PACKET_REGULAR, s.ackNoDelay); ret != 0 {
+		if ret := s.Input(data, IKCP_PACKET_REGULAR, s.ackNoDelay); ret != 0 {
 			atomic.AddUint64(&DefaultSnmp.KCPInErrors, 1)
 		}
 
-		if n := s.kcp.PeekSize(); n > 0 {
-			s.notifyReadEvent()
+		return nil
+	}
+	return nil
+}
+
+// Input a packet into kcp state machine.
+//
+// 'regular' indicates it's a real data packet from remote, and it means it's not generated from ReedSolomon
+// codecs.
+//
+// 'ackNoDelay' will trigger immediate ACK, but surely it will not be efficient in bandwidth
+func (s *UDPSession) Input(data []byte, pktType PacketType, ackNoDelay bool) int {
+	if len(data) < IKCP_OVERHEAD {
+		log.Println("packet size check failed")
+		return -1
+	}
+
+	var inSegs uint64
+
+	for {
+		var ts, sn, length, una, conv uint32
+		var wnd uint16
+		var cmd, frg uint8
+
+		if len(data) < int(IKCP_OVERHEAD) {
+			break
 		}
 
-		waitsnd := s.kcp.WaitSnd()
-		if waitsnd < int(s.kcp.snd_wnd) {
-			s.notifyWriteEvent()
+		data = ikcp_decode32u(data, &conv)
+		data = ikcp_decode8u(data, &cmd)
+		data = ikcp_decode8u(data, &frg)
+		data = ikcp_decode16u(data, &wnd)
+		data = ikcp_decode32u(data, &ts)
+		data = ikcp_decode32u(data, &sn)
+		data = ikcp_decode32u(data, &una)
+		data = ikcp_decode32u(data, &length)
+
+		log.Println(IKCP_LOG_INPUT, "conv", conv, "cmd", cmd, "frg", frg, "wnd", wnd, "ts", ts, "sn", sn, "una", una, "len", length, "datalen", len(data))
+
+		if len(data) < int(length) {
+			log.Println("check content data failed")
+			return -2
 		}
-		return
+
+		if cmd != IKCP_CMD_PUSH && cmd != IKCP_CMD_ACK &&
+			cmd != IKCP_CMD_WASK && cmd != IKCP_CMD_WINS {
+			return -3
+		}
+
+		if cmd == IKCP_CMD_ACK {
+			log.Println(IKCP_LOG_IN_ACK, "conv", conv, "sn", sn, "una", una, "ts", ts)
+		} else if cmd == IKCP_CMD_PUSH {
+			var seg segment
+			seg.conv = conv
+			seg.cmd = cmd
+			seg.frg = frg
+			seg.wnd = wnd
+			seg.ts = ts
+			seg.sn = sn
+			seg.una = una
+			seg.data = data[:length] // delayed data copying
+			log.Println(IKCP_LOG_IN_PUSH, "conv", conv, "sn", sn, "una", una, "ts", ts, "packettype", pktType, "seg", seg)
+		} else if cmd == IKCP_CMD_WASK {
+		} else if cmd == IKCP_CMD_WINS {
+		} else {
+			return -3
+		}
+
+		inSegs++
+		data = data[length:]
 	}
+
+	return 0
 }
 
 type (
