@@ -1264,7 +1264,7 @@ func (s *UDPSession) Input(data []byte, pktType PacketType, ackNoDelay bool) int
 			seg.sn = sn
 			seg.una = una
 			seg.data = data[:length] // delayed data copying
-			log.Println(IKCP_LOG_IN_PUSH, "conv", conv, "sn", sn, "una", una, "ts", ts, "packettype", pktType, "seg", seg)
+			log.Println(IKCP_LOG_IN_PUSH, "get data", string(seg.data))
 		} else if cmd == IKCP_CMD_WASK {
 		} else if cmd == IKCP_CMD_WINS {
 		} else {

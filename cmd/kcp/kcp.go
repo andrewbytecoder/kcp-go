@@ -113,11 +113,3 @@ func (k *Kcp) Run() error {
 
 	return nil
 }
-
-// 辅助函数：获取前几个字节的十六进制表示
-func getHexPreview(data []byte) []byte {
-	if len(data) > 8 {
-		return data[:8]
-	}
-	return data
-}
