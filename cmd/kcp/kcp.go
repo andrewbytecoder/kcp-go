@@ -40,24 +40,6 @@ type Segment struct {
 	Data     []byte `json:"data"`     // 载荷数据
 }
 
-func decode(ptr []byte) *Segment {
-	_ = ptr[IKCP_OVERHEAD-1] // BCE hint
-
-	seg := &Segment{}
-
-	seg.Conv = binary.LittleEndian.Uint32(ptr)
-	seg.Cmd = ptr[4]
-	seg.Frg = ptr[5]
-	seg.Wnd = binary.LittleEndian.Uint16(ptr[6:])
-	seg.Ts = binary.LittleEndian.Uint32(ptr[8:])
-	seg.SN = binary.LittleEndian.Uint32(ptr[12:])
-	seg.Una = binary.LittleEndian.Uint32(ptr[16:])
-	seg.Len = binary.LittleEndian.Uint32(ptr[20:])
-	seg.Data = ptr[24:]
-
-	return seg
-}
-
 func New() *Kcp {
 	k := Kcp{}
 
@@ -121,47 +103,13 @@ func (k *Kcp) Run() error {
 		// 5. 获取 UDP 载荷 (Payload)
 		payload := udp.LayerPayload()
 
-		jsonByte, err := json.Marshal(decode(udp.LayerPayload()))
-		if err != nil {
-			log.Println("json marshal failed")
-			continue
-		}
-
-		fmt.Println(string(jsonByte))
-
-		fmt.Print(decode(udp.LayerPayload()))
-
-		// 6. 格式化输出
-		// 尝试将载荷转换为字符串，如果包含不可打印字符，则显示 Hex
-		dataStr := string(payload)
-		isPrintable := true
-		for _, b := range payload {
-			if b < 32 || b > 126 {
-				// 简单的启发式判断：如果有非 ASCII 可打印字符，可能不是纯文本
-				// 注意：这只是一个简单判断，DNS 等二进制协议会被判定为非文本
-				isPrintable = false
-				break
-			}
-		}
-
-		// 为了演示，如果是 DNS (端口 53) 或其他已知二进制协议，强制显示 Hex 或部分信息
-		// 这里简单处理：如果长度很短且看起来像文本，打印文本，否则打印 Hex 摘要
-		var contentPreview string
-		if isPrintable && len(payload) > 0 {
-			contentPreview = dataStr
-			if len(contentPreview) > 50 {
-				contentPreview = contentPreview[:50] + "..."
-			}
-		} else {
-			contentPreview = fmt.Sprintf("<Binary Data> Len:%d Hex:%x", len(payload), getHexPreview(payload))
-		}
+		k.udpSession.PcapPacketInput(payload)
 
 		// 打印详细信息
-		fmt.Printf("[%s] %s:%d -> %s:%d | Payload: %s\n",
+		fmt.Printf("[%s] %s:%d -> %s:%d \n",
 			packet.Metadata().Timestamp.Format("15:04:05.000"),
 			srcIP, udp.SrcPort,
 			dstIP, udp.DstPort,
-			contentPreview,
 		)
 	}
 

@@ -1,6 +1,11 @@
 <img src="assets/kcp-go.png" alt="kcp-go" height="100px" />
 
 
+```bash
+export CGO_ENABLED=1
+```
+
+
 [![GoDoc][1]][2] [![Powered][9]][10] [![MIT licensed][11]][12] [![Build Status][3]][4] [![Go Report Card][5]][6] [![Coverage Status][7]][8] [![Sourcegraph][13]][14]
 
 [1]: https://godoc.org/github.com/xtaci/kcp-go?status.svg
