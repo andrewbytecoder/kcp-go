@@ -6,15 +6,15 @@ import (
 	"log"
 	"time"
 
-	"github.com/xtaci/kcp-go/v5"
+	kcp2 "github.com/xtaci/kcp-go/v5/pkg/kcp"
 	"golang.org/x/crypto/pbkdf2"
 )
 
 func main() {
 	key := pbkdf2.Key([]byte("demo pass"), []byte("demo salt"), 1024, 32, sha1.New)
-	block, _ := kcp.NewAESBlockCrypt(key)
+	block, _ := kcp2.NewAESBlockCrypt(key)
 
-	listener, err := kcp.ListenWithOptions("127.0.0.1:8081", block, 10, 3)
+	listener, err := kcp2.kcp.ListenWithOptions("127.0.0.1:8081", block, 10, 3)
 	if err != nil {
 		log.Fatal(err)
 		return
@@ -35,7 +35,7 @@ func main() {
 }
 
 // handleEcho send back everything it received
-func handleEcho(conn *kcp.UDPSession) {
+func handleEcho(conn *kcp2.kcp) {
 	buf := make([]byte, 4096)
 	for {
 		n, err := conn.Read(buf)
@@ -54,13 +54,13 @@ func handleEcho(conn *kcp.UDPSession) {
 
 func client() {
 	key := pbkdf2.Key([]byte("demo pass"), []byte("demo salt"), 1024, 32, sha1.New)
-	block, _ := kcp.NewAESBlockCrypt(key)
+	block, _ := kcp2.NewAESBlockCrypt(key)
 
 	// wait for server to become ready
 	time.Sleep(time.Second)
 
 	// dial to the echo server
-	sess, err := kcp.DialWithOptions("127.0.0.1:8081", block, 10, 3)
+	sess, err := kcp2.kcp.DialWithOptions("127.0.0.1:8081", block, 10, 3)
 	if err != nil {
 		log.Fatal(err)
 		return

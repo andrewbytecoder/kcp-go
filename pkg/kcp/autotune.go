@@ -89,7 +89,7 @@ func (tune *autoTune) FindPeriod(bit bool) int {
 	// Create a slice view over the cache for sorting
 	sorted := tune.sortCache[:tune.count]
 
-	// Sort the copied data by sequence number (seq) to ensure linear order for period calculation.
+	// Sort the copied Data by sequence number (seq) to ensure linear order for period calculation.
 	sort.Slice(sorted, func(i, j int) bool {
 		return _itimediff(sorted[i].seq, sorted[j].seq) < 0
 	})

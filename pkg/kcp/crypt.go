@@ -46,13 +46,13 @@ var (
 	// https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation#Initialization_vector_.28IV.29
 	// https://en.wikipedia.org/wiki/Initialization_vector
 	// actually initial vector is not used in this package, we prepend a random nonce to each outgoing packets.
-	// though IV is fixed, the first 8 bytes of the encrypted data is always random.
+	// though IV is fixed, the first 8 bytes of the encrypted Data is always random.
 	initialVector = []byte{167, 115, 79, 156, 18, 172, 27, 1, 164, 21, 242, 193, 252, 120, 230, 107}
 	saltxor       = `sH3CIVoF#rWLtJo6`
 )
 
 // BlockCrypt defines encryption/decryption methods for a given byte slice.
-// Notes on implementing: the data to be encrypted contains a builtin
+// Notes on implementing: the Data to be encrypted contains a builtin
 // nonce at the first 16 bytes
 type BlockCrypt interface {
 	// Encrypt encrypts the whole block in src into dst.
@@ -509,7 +509,7 @@ func decrypt8(block cipher.Block, dst, src, buf []byte) {
 	repeat := n >> 3 // n / 8
 	left := n & 7    // n % 8
 
-	// loop unrolling to relieve data dependency
+	// loop unrolling to relieve Data dependency
 	for range repeat {
 		s := src[base:][0:64]
 		d := dst[base:][0:64]
@@ -597,7 +597,7 @@ func decrypt16(block cipher.Block, dst, src, buf []byte) {
 	repeat := n >> 3 // n / 8
 	left := n & 7    // n % 8
 
-	// loop unrolling to relieve data dependency
+	// loop unrolling to relieve Data dependency
 	for range repeat {
 		s := src[base:][0:128]
 		d := dst[base:][0:128]

@@ -76,7 +76,7 @@ const (
 	// maximum packet size
 	mtuLimit = 1500
 
-	// conv field size
+	// Conv field size
 	convSize = 4
 
 	// accept backlog
@@ -166,9 +166,9 @@ type (
 
 		mu sync.Mutex
 
-		// callbackForOOB is an optional callback for handling received out-of-band (OOB) data.
+		// callbackForOOB is an optional callback for handling received out-of-band (OOB) Data.
 		//
-		// OOB data bypasses the KCP reliable data path and is delivered unreliably.
+		// OOB Data bypasses the KCP reliable Data path and is delivered unreliably.
 		// The callback is invoked synchronously from the KCP input processing path.
 		callbackForOOB atomic.Value
 	}
@@ -242,7 +242,7 @@ func newUDPSession(conv uint32, dataShards, parityShards int, l *Listener, conn 
 		if size >= IKCP_OVERHEAD {
 			// make a copy
 			bts := defaultBufferPool.Get()[:size+sess.headerSize]
-			// copy the data to a new buffer, and reserve header space
+			// copy the Data to a new buffer, and reserve header space
 			copy(bts[sess.headerSize:], buf)
 
 			// delivery to post processing (non-blocking to avoid deadlock under lock)
@@ -299,8 +299,8 @@ RESET_TIMER:
 	for {
 		s.mu.Lock()
 		// bufptr points to the current position of recvbuf,
-		// if previous 'b' is insufficient to accommodate the data, the
-		// remaining data will be stored in bufptr for next read.
+		// if previous 'b' is insufficient to accommodate the Data, the
+		// remaining Data will be stored in bufptr for next read.
 		if len(s.bufptr) > 0 {
 			n = copy(b, s.bufptr)
 			s.bufptr = s.bufptr[n:]
@@ -309,8 +309,8 @@ RESET_TIMER:
 			return n, nil
 		}
 
-		if size := s.kcp.PeekSize(); size > 0 { // peek data size from kcp
-			// if 'b' is large enough to accommodate the data, read directly
+		if size := s.kcp.PeekSize(); size > 0 { // peek Data size from kcp
+			// if 'b' is large enough to accommodate the Data, read directly
 			// from kcp.recv() to 'b', like 'DMA'.
 			if len(b) >= size {
 				s.kcp.Recv(b)
@@ -326,9 +326,9 @@ RESET_TIMER:
 				s.recvbuf = make([]byte, size)
 			}
 
-			// resize the length of recvbuf to match the data size
+			// resize the length of recvbuf to match the Data size
 			s.recvbuf = s.recvbuf[:size]
-			s.kcp.Recv(s.recvbuf)    // read data to recvbuf first
+			s.kcp.Recv(s.recvbuf)    // read Data to recvbuf first
 			n = copy(b, s.recvbuf)   // then copy bytes to 'b' as many as possible
 			s.bufptr = s.recvbuf[n:] // pointer update
 
@@ -340,7 +340,7 @@ RESET_TIMER:
 		s.mu.Unlock()
 
 		// if it runs here, that means we have to block the call, and wait until the
-		// next data packet arrives.
+		// next Data packet arrives.
 		select {
 		case <-s.chReadEvent:
 			if timeout != nil {
@@ -386,7 +386,7 @@ RESET_TIMER:
 		// make sure write do not overflow the max sliding window on both side
 		waitsnd := s.kcp.WaitSnd()
 		if waitsnd < int(s.kcp.snd_wnd) {
-			// transmit all data sequentially, make sure every packet size is within 'mss'
+			// transmit all Data sequentially, make sure every packet size is within 'mss'
 			for _, b := range v {
 				n += len(b)
 				// handle each slice for packet splitting
@@ -456,7 +456,7 @@ func (s *UDPSession) Close() error {
 
 	atomic.AddUint64(&DefaultSnmp.CurrEstab, ^uint64(0))
 
-	// try best to send all queued messages especially the data in txqueue
+	// try best to send all queued messages especially the Data in txqueue
 	s.mu.Lock()
 	s.kcp.flush((IKCP_FLUSH_FULL))
 	s.mu.Unlock()
@@ -751,7 +751,7 @@ func (s *UDPSession) postProcess() {
 					_ = limiter.WaitN(ctx, bytesToSend)
 				}
 				s.tx(txqueue)
-				s.kcp.debugLog(IKCP_LOG_OUTPUT, "conv", s.kcp.conv, "datalen", bytesToSend)
+				s.kcp.debugLog(IKCP_LOG_OUTPUT, "Conv", s.kcp.conv, "datalen", bytesToSend)
 				// recycle
 				for k := range txqueue {
 					defaultBufferPool.Put(txqueue[k].Buffers[0])
@@ -795,7 +795,7 @@ func (s *UDPSession) update() {
 // GetConv gets conversation id of a session
 func (s *UDPSession) GetConv() uint32 { return s.kcp.conv }
 
-// GetRTO gets current rto of the session
+// GetRTO gets current Rto of the session
 func (s *UDPSession) GetRTO() uint32 {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -816,9 +816,9 @@ func (s *UDPSession) GetSRTTVar() int32 {
 	return s.kcp.rx_rttvar
 }
 
-// SetOOBHandler registers a callback for receiving out-of-band (OOB) data.
+// SetOOBHandler registers a callback for receiving out-of-band (OOB) Data.
 //
-// OOB data is delivered unreliably and bypasses the KCP reliable data path.
+// OOB Data is delivered unreliably and bypasses the KCP reliable Data path.
 // The callback is invoked synchronously from the KCP input processing path.
 //
 // The callback MUST return quickly and MUST NOT perform any blocking operations.
@@ -843,24 +843,24 @@ func (s *UDPSession) SetOOBHandler(callback OOBCallBackType) error {
 // GetOOBMaxSize returns the maximum payload size for an OOB packet.
 //
 // The returned value is the maximum number of bytes that can be carried as
-// OOB data in a single packet, based on the current MTU and protocol layout.
+// OOB Data in a single packet, based on the current MTU and protocol layout.
 //
 // If FEC is not enabled, OOB is unsupported and this function returns 0.
 func (s *UDPSession) GetOOBMaxSize() int {
 	if s.fecEncoder == nil {
 		return 0
 	}
-	// Packet layout: | conv (4B) | OOB payload |
+	// Packet layout: | Conv (4B) | OOB payload |
 	return int(s.kcp.mtu) - convSize
 }
 
-// SendOOB sends an out-of-band (OOB) data packet.
+// SendOOB sends an out-of-band (OOB) Data packet.
 //
 // OOB packets:
 //   - Are unreliable: they are NOT retransmitted if lost.
 //   - Are unordered: delivery order is not guaranteed.
 //   - Are unacknowledged: no ACKs are generated.
-//   - Bypass the KCP reliable data path.
+//   - Bypass the KCP reliable Data path.
 //   - Reuse the FEC header layout for demultiplexing, but are NOT protected by FEC.
 //
 // The OOB payload MUST fit into a single packet.
@@ -876,7 +876,7 @@ func (s *UDPSession) SendOOB(data []byte) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	// Packet layout: | conv (4B) | OOB payload |
+	// Packet layout: | Conv (4B) | OOB payload |
 	size := convSize + len(data)
 	if size > int(s.kcp.mtu) {
 		return errors.New("OOB payload too large")
@@ -990,7 +990,7 @@ func (s *UDPSession) kcpInput(data []byte) {
 	atomic.AddUint64(&DefaultSnmp.InPkts, 1)
 	atomic.AddUint64(&DefaultSnmp.InBytes, uint64(len(data)))
 
-	// 16bit kcp cmd [81-84] and frg [0-255] will not overlap with FEC type 0x00f1 0x00f2
+	// 16bit kcp Cmd [81-84] and Frg [0-255] will not overlap with FEC type 0x00f1 0x00f2
 	fecFlag := binary.LittleEndian.Uint16(data[4:])
 
 	switch fecFlag {
@@ -1013,8 +1013,8 @@ func (s *UDPSession) kcpInput(data []byte) {
 			s.fecDecoder = newFECDecoder(1, 1)
 		}
 
-		// KCP input for data packets
-		// only data packets are fed into kcp directly
+		// KCP input for Data packets
+		// only Data packets are fed into kcp directly
 		// parity packets are only used for recovery
 		if f.flag() == typeData {
 			if ret := s.kcp.Input(data[fecHeaderSizePlus2:], IKCP_PACKET_REGULAR, s.ackNoDelay); ret != 0 {
@@ -1038,7 +1038,7 @@ func (s *UDPSession) kcpInput(data []byte) {
 			defaultBufferPool.Put(r)
 		}
 
-		// to notify the readers to receive the data if there's any
+		// to notify the readers to receive the Data if there's any
 		if n := s.kcp.PeekSize(); n > 0 {
 			s.notifyReadEvent()
 		}
@@ -1059,7 +1059,7 @@ func (s *UDPSession) kcpInput(data []byte) {
 		// If an OOB callback is registered, invoke it synchronously.
 		// The callback is responsible for ensuring non-blocking behavior.
 		if callback := s.callbackForOOB.Load(); callback != nil {
-			// Data layout: | FEC header (fecHeaderSizePlus2) | conv (4B) | OOB payload |
+			// Data layout: | FEC header (fecHeaderSizePlus2) | Conv (4B) | OOB payload |
 			callback.(OOBCallBackType)(data[fecHeaderSizePlus2+convSize:])
 		}
 	default: // packet without FEC
@@ -1083,7 +1083,7 @@ func (s *UDPSession) kcpInput(data []byte) {
 }
 
 // PcapPacketInput is the entry point for incoming packets.
-// It handles decryption and CRC32 verification before passing data to kcpInput.
+// It handles decryption and CRC32 verification before passing Data to kcpInput.
 //
 // Pipeline: Network -> [Decrypt] -> [CRC32] -> kcpInput
 func (s *UDPSession) PcapPacketInput(data []byte) error {
@@ -1138,7 +1138,7 @@ func (s *UDPSession) pcapKcpInput(data []byte) error {
 	atomic.AddUint64(&DefaultSnmp.InPkts, 1)
 	atomic.AddUint64(&DefaultSnmp.InBytes, uint64(len(data)))
 
-	// 16bit kcp cmd [81-84] and frg [0-255] will not overlap with FEC type 0x00f1 0x00f2
+	// 16bit kcp Cmd [81-84] and Frg [0-255] will not overlap with FEC type 0x00f1 0x00f2
 	fecFlag := binary.LittleEndian.Uint16(data[4:])
 
 	switch fecFlag {
@@ -1161,8 +1161,8 @@ func (s *UDPSession) pcapKcpInput(data []byte) error {
 			s.fecDecoder = newFECDecoder(1, 1)
 		}
 
-		// KCP input for data packets
-		// only data packets are fed into kcp directly
+		// KCP input for Data packets
+		// only Data packets are fed into kcp directly
 		// parity packets are only used for recovery
 		if f.flag() == typeData {
 			if ret := s.Input(data[fecHeaderSizePlus2:], IKCP_PACKET_REGULAR, s.ackNoDelay); ret != 0 {
@@ -1192,7 +1192,7 @@ func (s *UDPSession) pcapKcpInput(data []byte) error {
 		// If an OOB callback is registered, invoke it synchronously.
 		// The callback is responsible for ensuring non-blocking behavior.
 		if callback := s.callbackForOOB.Load(); callback != nil {
-			// Data layout: | FEC header (fecHeaderSizePlus2) | conv (4B) | OOB payload |
+			// Data layout: | FEC header (fecHeaderSizePlus2) | Conv (4B) | OOB payload |
 			callback.(OOBCallBackType)(data[fecHeaderSizePlus2+convSize:])
 		}
 	default: // packet without FEC
@@ -1210,7 +1210,7 @@ func (s *UDPSession) pcapKcpInput(data []byte) error {
 
 // Input a packet into kcp state machine.
 //
-// 'regular' indicates it's a real data packet from remote, and it means it's not generated from ReedSolomon
+// 'regular' indicates it's a real Data packet from remote, and it means it's not generated from ReedSolomon
 // codecs.
 //
 // 'ackNoDelay' will trigger immediate ACK, but surely it will not be efficient in bandwidth
@@ -1240,10 +1240,10 @@ func (s *UDPSession) Input(data []byte, pktType PacketType, ackNoDelay bool) int
 		data = ikcp_decode32u(data, &una)
 		data = ikcp_decode32u(data, &length)
 
-		log.Println(IKCP_LOG_INPUT, "conv", conv, "cmd", cmd, "frg", frg, "wnd", wnd, "ts", ts, "sn", sn, "una", una, "len", length, "datalen", len(data))
+		log.Println(IKCP_LOG_INPUT, "Conv", conv, "Cmd", cmd, "Frg", frg, "Wnd", wnd, "Ts", ts, "Sn", sn, "Una", una, "len", length, "datalen", len(data))
 
 		if len(data) < int(length) {
-			log.Println("check content data failed")
+			log.Println("check content Data failed")
 			return -2
 		}
 
@@ -1253,18 +1253,18 @@ func (s *UDPSession) Input(data []byte, pktType PacketType, ackNoDelay bool) int
 		}
 
 		if cmd == IKCP_CMD_ACK {
-			log.Println(IKCP_LOG_IN_ACK, "conv", conv, "sn", sn, "una", una, "ts", ts)
+			log.Println(IKCP_LOG_IN_ACK, "Conv", conv, "Sn", sn, "Una", una, "Ts", ts)
 		} else if cmd == IKCP_CMD_PUSH {
-			var seg segment
-			seg.conv = conv
-			seg.cmd = cmd
-			seg.frg = frg
-			seg.wnd = wnd
-			seg.ts = ts
-			seg.sn = sn
-			seg.una = una
-			seg.data = data[:length] // delayed data copying
-			log.Println(IKCP_LOG_IN_PUSH, "get data", string(seg.data))
+			var seg Segment
+			seg.Conv = conv
+			seg.Cmd = cmd
+			seg.Frg = frg
+			seg.Wnd = wnd
+			seg.Ts = ts
+			seg.Sn = sn
+			seg.Una = una
+			seg.Data = data[:length] // delayed Data copying
+			log.Println(IKCP_LOG_IN_PUSH, "get Data", string(seg.Data))
 		} else if cmd == IKCP_CMD_WASK {
 		} else if cmd == IKCP_CMD_WINS {
 		} else {
@@ -1282,7 +1282,7 @@ type (
 	// Listener defines a server which will be waiting to accept incoming connections
 	Listener struct {
 		block        BlockCrypt     // block encryption
-		dataShards   int            // FEC data shard
+		dataShards   int            // FEC Data shard
 		parityShards int            // FEC parity shard
 		conn         net.PacketConn // the underlying packet connection
 		ownConn      bool           // true if we created conn internally, false if provided by caller
@@ -1357,12 +1357,12 @@ func (l *Listener) packetInput(data []byte, addr net.Addr) {
 	hasConv := false
 
 	// try to get conversation id from the packet
-	// 16bit kcp cmd [81-84] and frg [0-255] will not overlap with FEC type 0x00f1 0x00f2
+	// 16bit kcp Cmd [81-84] and Frg [0-255] will not overlap with FEC type 0x00f1 0x00f2
 	fecFlag := binary.LittleEndian.Uint16(data[4:])
 
 	switch fecFlag {
 	case typeData:
-		// data packet of FEC, conversation id inside
+		// Data packet of FEC, conversation id inside
 		if len(data) < fecHeaderSizePlus2+IKCP_OVERHEAD {
 			break
 		}
@@ -1375,7 +1375,7 @@ func (l *Listener) packetInput(data []byte, addr net.Addr) {
 	case typeOOB:
 		// OOB packets always carry the conversation ID immediately after the FEC header.
 		hasConv = true
-		// Data layout: | FEC header (fecHeaderSizePlus2) | conv (4B) | OOB payload |
+		// Data layout: | FEC header (fecHeaderSizePlus2) | Conv (4B) | OOB payload |
 		conv = binary.LittleEndian.Uint32(data[fecHeaderSizePlus2:])
 	default:
 		// packet without FEC
@@ -1390,12 +1390,12 @@ func (l *Listener) packetInput(data []byte, addr net.Addr) {
 	// on an existing connection
 	if exist {
 		// If we have a valid conversation id or we cannot get conversation id from the packet,
-		// just feed the data into the existing session.
+		// just feed the Data into the existing session.
 		if !hasConv || conv == s.kcp.conv {
 			s.kcpInput(data)
 			return
 		}
-		// conversation id mismatched, only accept reset packet with sn == 0
+		// conversation id mismatched, only accept reset packet with Sn == 0
 		if sn != 0 {
 			return
 		}
@@ -1585,7 +1585,7 @@ func Listen(laddr string) (net.Listener, error) {
 //
 // 'block' is the block encryption algorithm to encrypt packets.
 //
-// 'dataShards', 'parityShards' specify how many parity packets will be generated following the data packets.
+// 'dataShards', 'parityShards' specify how many parity packets will be generated following the Data packets.
 //
 // Check https://github.com/klauspost/reedsolomon for details
 func ListenWithOptions(laddr string, block BlockCrypt, dataShards, parityShards int) (*Listener, error) {
@@ -1632,7 +1632,7 @@ func Dial(raddr string) (net.Conn, error) {
 //
 // 'block' is the block encryption algorithm to encrypt packets.
 //
-// 'dataShards', 'parityShards' specify how many parity packets will be generated following the data packets.
+// 'dataShards', 'parityShards' specify how many parity packets will be generated following the Data packets.
 //
 // Check https://github.com/klauspost/reedsolomon for details
 func DialWithOptions(raddr string, block BlockCrypt, dataShards, parityShards int) (*UDPSession, error) {

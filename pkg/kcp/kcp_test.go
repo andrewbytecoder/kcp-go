@@ -150,9 +150,9 @@ func testlink(t *testing.T, client *lossyconn.LossyConn, server *lossyconn.Lossy
 
 func BenchmarkFlush(b *testing.B) {
 	kcp := NewKCP(1, func(buf []byte, size int) {})
-	kcp.snd_buf = NewRingBuffer[segment](1024)
+	kcp.snd_buf = NewRingBuffer[Segment](1024)
 	for range kcp.snd_buf.MaxLen() {
-		kcp.snd_buf.Push(segment{xmit: 1, resendts: currentMs() + 10000})
+		kcp.snd_buf.Push(Segment{Xmit: 1, Resendts: currentMs() + 10000})
 	}
 
 	b.ReportAllocs()
@@ -164,18 +164,18 @@ func BenchmarkFlush(b *testing.B) {
 	}
 }
 
-// TestSegmentHeap tests the segmentHeap data structure
+// TestSegmentHeap tests the segmentHeap Data structure
 func TestSegmentHeap(t *testing.T) {
 	h := newSegmentHeap()
-	segments := []segment{
-		{sn: 1},
-		{sn: 2},
-		{sn: 3},
+	segments := []Segment{
+		{Sn: 1},
+		{Sn: 2},
+		{Sn: 3},
 	}
 
 	for _, seg := range segments {
 		heap.Push(h, seg)
-		t.Logf("pushed segment with seq %d", seg.sn)
+		t.Logf("pushed Segment with seq %d", seg.Sn)
 	}
 
 	if h.Len() != len(segments) {
@@ -183,9 +183,9 @@ func TestSegmentHeap(t *testing.T) {
 	}
 
 	for i := range segments {
-		seg := heap.Pop(h).(segment)
-		if seg.sn != segments[i].sn {
-			t.Errorf("expected seq %d, got %d", segments[i].sn, seg.sn)
+		seg := heap.Pop(h).(Segment)
+		if seg.Sn != segments[i].Sn {
+			t.Errorf("expected seq %d, got %d", segments[i].Sn, seg.Sn)
 		}
 	}
 }
@@ -208,6 +208,6 @@ func BenchmarkDebugLog(b *testing.B) {
 	for b.Loop() {
 		// In release mode, this line of code will be completely 'erased' by the compiler,
 		// as if it doesn't exist at all, and even the parameter's interface conversion will not occur.
-		kcp.debugLog(IKCP_LOG_OUT_WASK, "conv", kcp.conv, "wnd", kcp.snd_wnd)
+		kcp.debugLog(IKCP_LOG_OUT_WASK, "Conv", kcp.conv, "Wnd", kcp.snd_wnd)
 	}
 }

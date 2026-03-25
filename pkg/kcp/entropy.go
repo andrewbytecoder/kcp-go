@@ -61,7 +61,7 @@ func SetEntropy(r io.Reader) {
 	entropy = r
 }
 
-// fillRand fills p with random data from the global entropy source.
+// fillRand fills p with random Data from the global entropy source.
 func fillRand(p []byte) {
 	if len(p) <= 0 {
 		return
@@ -112,7 +112,7 @@ func (r *rngAES) updateSeed() {
 	r.count = 0
 }
 
-// Read fills p with random data using AES encryption.
+// Read fills p with random Data using AES encryption.
 func (r *rngAES) Read(p []byte) (int, error) {
 	if len(p) == 0 {
 		return 0, nil
@@ -157,7 +157,7 @@ func (r *rngChacha8) updateSeed() {
 	r.count = 0
 }
 
-// Read fills p with random data using ChaCha8.
+// Read fills p with random Data using ChaCha8.
 func (r *rngChacha8) Read(p []byte) (int, error) {
 	if len(p) == 0 {
 		return 0, nil

@@ -313,7 +313,7 @@ func TestAutoTuneContinuousOverwrite(t *testing.T) {
 	assert.True(t, p1 > 0, "Should find period in phase 1")
 
 	// Second phase: continue with period 6 signal
-	// After enough samples, the old period 4 data should be overwritten
+	// After enough samples, the old period 4 Data should be overwritten
 	period2 := 6
 	baseSeq := uint32(maxAutoTuneSamples)
 	for i := 0; i < maxAutoTuneSamples; i++ {
@@ -339,7 +339,7 @@ func TestAutoTuneContinuousOverwrite(t *testing.T) {
 }
 
 // TestAutoTunePeriodChangeAfterOverwrite tests that when signal pattern changes,
-// the new period can be correctly detected after old data is fully overwritten
+// the new period can be correctly detected after old Data is fully overwritten
 func TestAutoTunePeriodChangeAfterOverwrite(t *testing.T) {
 	testCases := []struct {
 		name             string
@@ -382,7 +382,7 @@ func TestAutoTunePeriodChangeAfterOverwrite(t *testing.T) {
 			assert.Equal(t, tc.oldFalseDuration, oldFoundFalse, "Old false period should match")
 
 			// Phase 2: Overwrite with new period signal
-			// Fill buffer completely to ensure all old data is replaced
+			// Fill buffer completely to ensure all old Data is replaced
 			baseSeq := uint32(maxAutoTuneSamples)
 			for i := 0; i < maxAutoTuneSamples; i++ {
 				posInPeriod := i % newPeriod
@@ -447,7 +447,7 @@ func TestAutoTuneMultiplePeriodChanges(t *testing.T) {
 }
 
 // TestAutoTuneGradualPeriodTransition tests the transition period
-// when old data is being gradually replaced by new data
+// when old Data is being gradually replaced by new Data
 func TestAutoTuneGradualPeriodTransition(t *testing.T) {
 	tune := autoTune{}
 

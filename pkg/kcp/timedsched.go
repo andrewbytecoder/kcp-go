@@ -48,7 +48,7 @@ func (h *timedFuncHeap) Pop() any {
 	old := *h
 	n := len(old)
 	x := old[n-1]
-	old[n-1] = timedFunc{} // clear to avoid memory leak (both execute and ts)
+	old[n-1] = timedFunc{} // clear to avoid memory leak (both execute and Ts)
 	*h = old[:n-1]
 	return x
 }

@@ -50,7 +50,7 @@ import (
 
 const (
 	fecHeaderSize      = 6
-	fecHeaderSizePlus2 = fecHeaderSize + 2 // plus 2B data size
+	fecHeaderSizePlus2 = fecHeaderSize + 2 // plus 2B Data size
 	typeData           = 0xf1
 	typeParity         = 0xf2
 	typeOOB            = 0xf3
@@ -238,7 +238,7 @@ func (dec *fecDecoder) decode(in fecPacket) (recovered [][]byte) {
 	copy(pkt, in)
 	shard.Push(pkt)
 
-	// try to recover data if we have enough shards
+	// try to recover Data if we have enough shards
 	if shard.Len() >= dec.dataShards {
 		var numDataShard, maxlen int
 
@@ -266,10 +266,10 @@ func (dec *fecDecoder) decode(in fecPacket) (recovered [][]byte) {
 			}
 		}
 
-		// case 1: all data shards are present
+		// case 1: all Data shards are present
 		if numDataShard == dec.dataShards {
 			atomic.AddUint64(&DefaultSnmp.FECFullShardSet, 1)
-		} else { // case 2: some data shards are missing, try to recover
+		} else { // case 2: some Data shards are missing, try to recover
 			// fill '0' into the tail of each shard to make them equal-sized
 			var newBuffers [][]byte
 			for k := range shards {
@@ -278,7 +278,7 @@ func (dec *fecDecoder) decode(in fecPacket) (recovered [][]byte) {
 					shards[k] = shards[k][:maxlen]
 					clear(shards[k][dlen:])
 				} else if k < dec.dataShards {
-					// prepare memory for the data recovery
+					// prepare memory for the Data recovery
 					shards[k] = defaultBufferPool.Get()[:0]
 					newBuffers = append(newBuffers, shards[k])
 				}
@@ -354,7 +354,7 @@ type (
 		next         uint32 // next seqid
 
 		shardCount int // count the number of datashards collected
-		maxSize    int // track maximum data length in datashard
+		maxSize    int // track maximum Data length in datashard
 
 		headerOffset  int // FEC header offset
 		payloadOffset int // FEC payload offset
@@ -405,7 +405,7 @@ func (enc *fecEncoder) encode(b []byte, rto uint32) (ps [][]byte) {
 	enc.sealData(b[enc.headerOffset:])
 	binary.LittleEndian.PutUint16(b[enc.payloadOffset:], uint16(len(b[enc.payloadOffset:])))
 
-	// copy data from payloadOffset to fec shard cache
+	// copy Data from payloadOffset to fec shard cache
 	sz := len(b)
 	enc.shardCache[enc.shardCount] = enc.shardCache[enc.shardCount][:sz]
 	copy(enc.shardCache[enc.shardCount][enc.payloadOffset:], b[enc.payloadOffset:])
@@ -421,17 +421,17 @@ func (enc *fecEncoder) encode(b []byte, rto uint32) (ps [][]byte) {
 	if enc.shardCount == enc.dataShards {
 		// Generate the parity shards if we collect enough datashards,
 		// the continuity is determined by the time interval between
-		// the latest 2 data packets.
+		// the latest 2 Data packets.
 		//
-		// If the interval is larger than rto, we consider the data is non-continuous,
+		// If the interval is larger than Rto, we consider the Data is non-continuous,
 		// thus we skip this parity generation to avoid useless parity packets.
 		//
 		// Note that, even we skip this parity generation, we still need to
 		// increase the seqid to keep the monotonic increasing property.
 		// This is important for the receiver to detect lost packets.
 		// see fecEncoder.skipParity()
-		// also note that the rto is in milliseconds.
-		// see kcp.UDPSession.rto()
+		// also note that the Rto is in milliseconds.
+		// see kcp.UDPSession.Rto()
 		//
 		if now-enc.tsLatestPacket < int64(rto) {
 			// clear the tail of each datashard to make them equal-sized
@@ -460,7 +460,7 @@ func (enc *fecEncoder) encode(b []byte, rto uint32) (ps [][]byte) {
 				enc.skipParity()
 			}
 		} else {
-			// Non-continuous data detected, skip this parity generation.
+			// Non-continuous Data detected, skip this parity generation.
 			// Through we do not send non-continuous parity shard, we still need to increase seqid.
 			enc.skipParity()
 		}
@@ -470,7 +470,7 @@ func (enc *fecEncoder) encode(b []byte, rto uint32) (ps [][]byte) {
 		enc.maxSize = 0
 	}
 
-	// record the time of the latest data packet
+	// record the time of the latest Data packet
 	enc.tsLatestPacket = now
 
 	return

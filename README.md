@@ -1,4 +1,4 @@
-<img src="assets/kcp-go.png" alt="kcp-go" height="100px" />
+<img src="manifest/assets/kcp-go.png" alt="kcp-go" height="100px" />
 
 
 [![GoDoc][1]][2] [![Powered][9]][10] [![MIT licensed][11]][12] [![Build Status][3]][4] [![Go Report Card][5]][6] [![Coverage Status][7]][8] [![Sourcegraph][13]][14]
@@ -71,7 +71,7 @@ For complete documentation, see the associated [Godoc](https://pkg.go.dev/github
 
 ### Layer-Model of KCP-GO
 
-<img src="assets/layermodel.jpg" alt="layer-model" />
+<img src="manifest/assets/layermodel.jpg" alt="layer-model" />
 
 ## Key Design Considerations
 
@@ -135,7 +135,7 @@ Ultimately, nothing is more critical in a transmission system than the clock (re
 
 ## Specification
 
-<img src="assets/frame.png" alt="Frame Format" height="109px" />
+<img src="manifest/assets/frame.png" alt="Frame Format" height="109px" />
 
 ```
 NONCE:
@@ -351,7 +351,7 @@ ok      github.com/xtaci/kcp-go/v5      64.151s
 
 
 ## Typical Flame Graph
-![Flame Graph in kcptun](assets/flame.png)
+![Flame Graph in kcptun](manifest/assets/flame.png)
 
 
 

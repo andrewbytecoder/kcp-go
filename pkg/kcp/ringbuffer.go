@@ -115,14 +115,14 @@ func (r *RingBuffer[T]) ForEach(fn func(*T) bool) {
 		return
 	}
 	if r.head < r.tail {
-		// Contiguous data: [head ... tail)
+		// Contiguous Data: [head ... tail)
 		for i := r.head; i < r.tail; i++ {
 			if !fn(&r.elements[i]) {
 				return
 			}
 		}
 	} else {
-		// Wrapped data: [head ... end) + [0 ... tail)
+		// Wrapped Data: [head ... end) + [0 ... tail)
 		for i := r.head; i < len(r.elements); i++ {
 			if !fn(&r.elements[i]) {
 				return
@@ -145,7 +145,7 @@ func (r *RingBuffer[T]) ForEachReverse(fn func(*T) bool) {
 	}
 
 	if r.head < r.tail {
-		// Contiguous data: [head ... tail)
+		// Contiguous Data: [head ... tail)
 		for i := r.tail - 1; i >= r.head; i-- {
 			if !fn(&r.elements[i]) {
 				return
@@ -168,7 +168,7 @@ func (r *RingBuffer[T]) ForEachReverse(fn func(*T) bool) {
 // Clear resets the ring to an empty state and reinitializes the buffer.
 func (r *RingBuffer[T]) Clear() {
 	var zero T
-	// Only clear elements that contain data to avoid retaining references
+	// Only clear elements that contain Data to avoid retaining references
 	if r.head <= r.tail {
 		for i := r.head; i < r.tail; i++ {
 			r.elements[i] = zero
@@ -223,10 +223,10 @@ func (r *RingBuffer[T]) grow() {
 
 	// Copy elements to new buffer preserving logical order
 	if r.head < r.tail {
-		// Contiguous data: [head ... tail)
+		// Contiguous Data: [head ... tail)
 		copy(newElements, r.elements[r.head:r.tail])
 	} else {
-		// Wrapped data: [head ... end) + [0 ... tail)
+		// Wrapped Data: [head ... end) + [0 ... tail)
 		n := copy(newElements, r.elements[r.head:])
 		copy(newElements[n:], r.elements[:r.tail])
 	}

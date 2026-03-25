@@ -1,6 +1,8 @@
 package kcp
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestBufferPoolGetSize(t *testing.T) {
 	bp := newBufferPool(mtuLimit)
@@ -40,7 +42,7 @@ func TestBufferPoolPutAndReuse(t *testing.T) {
 	}
 
 	if buf2[0] != 99 {
-		t.Fatalf("expected reused buffer to keep previous data")
+		t.Fatalf("expected reused buffer to keep previous Data")
 		return
 	}
 }

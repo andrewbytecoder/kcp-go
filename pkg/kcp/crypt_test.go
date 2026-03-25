@@ -32,11 +32,12 @@ import (
 	"io"
 	"testing"
 
+	"github.com/andrewbytecoder/kcp-go"
 	"golang.org/x/crypto/chacha20poly1305"
 )
 
 func TestSM4(t *testing.T) {
-	bc, err := NewSM4BlockCrypt(pass[:16])
+	bc, err := NewSM4BlockCrypt(kcp2.pass[:16])
 	if err != nil {
 		t.Fatal(err)
 		return
@@ -45,7 +46,7 @@ func TestSM4(t *testing.T) {
 }
 
 func TestAES(t *testing.T) {
-	bc, err := NewAESBlockCrypt(pass[:32])
+	bc, err := NewAESBlockCrypt(kcp2.pass[:32])
 	if err != nil {
 		t.Fatal(err)
 		return
@@ -54,7 +55,7 @@ func TestAES(t *testing.T) {
 }
 
 func TestTEA(t *testing.T) {
-	bc, err := NewTEABlockCrypt(pass[:16])
+	bc, err := NewTEABlockCrypt(kcp2.pass[:16])
 	if err != nil {
 		t.Fatal(err)
 		return
@@ -63,7 +64,7 @@ func TestTEA(t *testing.T) {
 }
 
 func TestXOR(t *testing.T) {
-	bc, err := NewSimpleXORBlockCrypt(pass[:32])
+	bc, err := NewSimpleXORBlockCrypt(kcp2.pass[:32])
 	if err != nil {
 		t.Fatal(err)
 		return
@@ -72,7 +73,7 @@ func TestXOR(t *testing.T) {
 }
 
 func TestBlowfish(t *testing.T) {
-	bc, err := NewBlowfishBlockCrypt(pass[:32])
+	bc, err := NewBlowfishBlockCrypt(kcp2.pass[:32])
 	if err != nil {
 		t.Fatal(err)
 		return
@@ -81,7 +82,7 @@ func TestBlowfish(t *testing.T) {
 }
 
 func TestNone(t *testing.T) {
-	bc, err := NewNoneBlockCrypt(pass[:32])
+	bc, err := NewNoneBlockCrypt(kcp2.pass[:32])
 	if err != nil {
 		t.Fatal(err)
 		return
@@ -90,7 +91,7 @@ func TestNone(t *testing.T) {
 }
 
 func TestCast5(t *testing.T) {
-	bc, err := NewCast5BlockCrypt(pass[:16])
+	bc, err := NewCast5BlockCrypt(kcp2.pass[:16])
 	if err != nil {
 		t.Fatal(err)
 		return
@@ -99,7 +100,7 @@ func TestCast5(t *testing.T) {
 }
 
 func Test3DES(t *testing.T) {
-	bc, err := NewTripleDESBlockCrypt(pass[:24])
+	bc, err := NewTripleDESBlockCrypt(kcp2.pass[:24])
 	if err != nil {
 		t.Fatal(err)
 		return
@@ -108,7 +109,7 @@ func Test3DES(t *testing.T) {
 }
 
 func TestTwofish(t *testing.T) {
-	bc, err := NewTwofishBlockCrypt(pass[:32])
+	bc, err := NewTwofishBlockCrypt(kcp2.pass[:32])
 	if err != nil {
 		t.Fatal(err)
 		return
@@ -117,7 +118,7 @@ func TestTwofish(t *testing.T) {
 }
 
 func TestXTEA(t *testing.T) {
-	bc, err := NewXTEABlockCrypt(pass[:16])
+	bc, err := NewXTEABlockCrypt(kcp2.pass[:16])
 	if err != nil {
 		t.Fatal(err)
 		return
@@ -126,7 +127,7 @@ func TestXTEA(t *testing.T) {
 }
 
 func TestSalsa20(t *testing.T) {
-	bc, err := NewSalsa20BlockCrypt(pass[:32])
+	bc, err := NewSalsa20BlockCrypt(kcp2.pass[:32])
 	if err != nil {
 		t.Fatal(err)
 		return
@@ -135,10 +136,10 @@ func TestSalsa20(t *testing.T) {
 }
 
 func cryptTest(t *testing.T, bc BlockCrypt) {
-	data := make([]byte, mtuLimit)
+	data := make([]byte, kcp2.mtuLimit)
 	io.ReadFull(rand.Reader, data)
-	dec := make([]byte, mtuLimit)
-	enc := make([]byte, mtuLimit)
+	dec := make([]byte, kcp2.mtuLimit)
+	enc := make([]byte, kcp2.mtuLimit)
 	bc.Encrypt(enc, data)
 	bc.Decrypt(dec, enc)
 	if !bytes.Equal(data, dec) {
@@ -147,7 +148,7 @@ func cryptTest(t *testing.T, bc BlockCrypt) {
 }
 
 func TestAES256GCM(t *testing.T) {
-	bc, err := NewAESGCMCrypt(pass[:32])
+	bc, err := NewAESGCMCrypt(kcp2.pass[:32])
 	if err != nil {
 		t.Fatal(err)
 		return
@@ -157,7 +158,7 @@ func TestAES256GCM(t *testing.T) {
 }
 
 func TestAES128GCM(t *testing.T) {
-	bc, err := NewAESGCMCrypt(pass[:16])
+	bc, err := NewAESGCMCrypt(kcp2.pass[:16])
 	if err != nil {
 		t.Fatal(err)
 		return
@@ -171,14 +172,14 @@ func testAEAD(t *testing.T, bc BlockCrypt) {
 
 	nonceSize := aead.NonceSize()
 
-	size := mtuLimit - cryptHeaderSize - aead.Overhead()
+	size := kcp2.mtuLimit - kcp2.cryptHeaderSize - aead.Overhead()
 	data := make([]byte, size)
 	io.ReadFull(rand.Reader, data)
 
 	// if the size of packet is cannot accommodate the AEAD overhead
 	// Open and Seal will allocate a new slice internally, we need to
 	// ensure that it does not happen for our MTU sized packets.
-	packet := make([]byte, mtuLimit)
+	packet := make([]byte, kcp2.mtuLimit)
 
 	// Seal
 	dst := packet[:nonceSize]
@@ -213,7 +214,7 @@ func testAEAD(t *testing.T, bc BlockCrypt) {
 }
 
 func BenchmarkSM4(b *testing.B) {
-	bc, err := NewSM4BlockCrypt(pass[:16])
+	bc, err := NewSM4BlockCrypt(kcp2.pass[:16])
 	if err != nil {
 		b.Fatal(err)
 		return
@@ -222,7 +223,7 @@ func BenchmarkSM4(b *testing.B) {
 }
 
 func BenchmarkAES128(b *testing.B) {
-	bc, err := NewAESBlockCrypt(pass[:16])
+	bc, err := NewAESBlockCrypt(kcp2.pass[:16])
 	if err != nil {
 		b.Fatal(err)
 		return
@@ -232,7 +233,7 @@ func BenchmarkAES128(b *testing.B) {
 }
 
 func BenchmarkAES192(b *testing.B) {
-	bc, err := NewAESBlockCrypt(pass[:24])
+	bc, err := NewAESBlockCrypt(kcp2.pass[:24])
 	if err != nil {
 		b.Fatal(err)
 		return
@@ -242,7 +243,7 @@ func BenchmarkAES192(b *testing.B) {
 }
 
 func BenchmarkAES256(b *testing.B) {
-	bc, err := NewAESBlockCrypt(pass[:32])
+	bc, err := NewAESBlockCrypt(kcp2.pass[:32])
 	if err != nil {
 		b.Fatal(err)
 		return
@@ -252,7 +253,7 @@ func BenchmarkAES256(b *testing.B) {
 }
 
 func BenchmarkTEA(b *testing.B) {
-	bc, err := NewTEABlockCrypt(pass[:16])
+	bc, err := NewTEABlockCrypt(kcp2.pass[:16])
 	if err != nil {
 		b.Fatal(err)
 		return
@@ -261,7 +262,7 @@ func BenchmarkTEA(b *testing.B) {
 }
 
 func BenchmarkXOR(b *testing.B) {
-	bc, err := NewSimpleXORBlockCrypt(pass[:32])
+	bc, err := NewSimpleXORBlockCrypt(kcp2.pass[:32])
 	if err != nil {
 		b.Fatal(err)
 		return
@@ -270,7 +271,7 @@ func BenchmarkXOR(b *testing.B) {
 }
 
 func BenchmarkBlowfish(b *testing.B) {
-	bc, err := NewBlowfishBlockCrypt(pass[:32])
+	bc, err := NewBlowfishBlockCrypt(kcp2.pass[:32])
 	if err != nil {
 		b.Fatal(err)
 		return
@@ -279,7 +280,7 @@ func BenchmarkBlowfish(b *testing.B) {
 }
 
 func BenchmarkNone(b *testing.B) {
-	bc, err := NewNoneBlockCrypt(pass[:32])
+	bc, err := NewNoneBlockCrypt(kcp2.pass[:32])
 	if err != nil {
 		b.Fatal(err)
 		return
@@ -288,7 +289,7 @@ func BenchmarkNone(b *testing.B) {
 }
 
 func BenchmarkCast5(b *testing.B) {
-	bc, err := NewCast5BlockCrypt(pass[:16])
+	bc, err := NewCast5BlockCrypt(kcp2.pass[:16])
 	if err != nil {
 		b.Fatal(err)
 		return
@@ -297,7 +298,7 @@ func BenchmarkCast5(b *testing.B) {
 }
 
 func Benchmark3DES(b *testing.B) {
-	bc, err := NewTripleDESBlockCrypt(pass[:24])
+	bc, err := NewTripleDESBlockCrypt(kcp2.pass[:24])
 	if err != nil {
 		b.Fatal(err)
 		return
@@ -306,7 +307,7 @@ func Benchmark3DES(b *testing.B) {
 }
 
 func BenchmarkTwofish(b *testing.B) {
-	bc, err := NewTwofishBlockCrypt(pass[:32])
+	bc, err := NewTwofishBlockCrypt(kcp2.pass[:32])
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -314,7 +315,7 @@ func BenchmarkTwofish(b *testing.B) {
 }
 
 func BenchmarkXTEA(b *testing.B) {
-	bc, err := NewXTEABlockCrypt(pass[:16])
+	bc, err := NewXTEABlockCrypt(kcp2.pass[:16])
 	if err != nil {
 		b.Fatal(err)
 		return
@@ -323,7 +324,7 @@ func BenchmarkXTEA(b *testing.B) {
 }
 
 func BenchmarkSalsa20(b *testing.B) {
-	bc, err := NewSalsa20BlockCrypt(pass[:32])
+	bc, err := NewSalsa20BlockCrypt(kcp2.pass[:32])
 	if err != nil {
 		b.Fatal(err)
 		return
@@ -332,10 +333,10 @@ func BenchmarkSalsa20(b *testing.B) {
 }
 
 func benchCrypt(b *testing.B, bc BlockCrypt) {
-	data := make([]byte, mtuLimit)
+	data := make([]byte, kcp2.mtuLimit)
 	io.ReadFull(rand.Reader, data)
-	dec := make([]byte, mtuLimit)
-	enc := make([]byte, mtuLimit)
+	dec := make([]byte, kcp2.mtuLimit)
+	enc := make([]byte, kcp2.mtuLimit)
 
 	b.ReportAllocs()
 	b.SetBytes(int64(len(enc) * 2))
@@ -355,24 +356,24 @@ func BenchmarkCRC32(b *testing.B) {
 }
 
 func BenchmarkCFB_AES_128_CRC32(b *testing.B) {
-	bc, err := NewAESBlockCrypt(pass[:16])
+	bc, err := NewAESBlockCrypt(kcp2.pass[:16])
 	if err != nil {
 		b.Fatal(err)
 		return
 	}
 
-	data := make([]byte, 1400, mtuLimit)
+	data := make([]byte, 1400, kcp2.mtuLimit)
 	b.SetBytes(1400)
 
 	for b.Loop() {
-		checksum := crc32.ChecksumIEEE(data[cryptHeaderSize:])
-		binary.LittleEndian.PutUint32(data[nonceSize:cryptHeaderSize], checksum)
+		checksum := crc32.ChecksumIEEE(data[kcp2.cryptHeaderSize:])
+		binary.LittleEndian.PutUint32(data[kcp2.nonceSize:kcp2.cryptHeaderSize], checksum)
 		bc.Encrypt(data, data)
 	}
 }
 
 func BenchmarkAEAD_AES_128_GCM(b *testing.B) {
-	block, err := aes.NewCipher(pass[:16])
+	block, err := aes.NewCipher(kcp2.pass[:16])
 	if err != nil {
 		panic(err)
 	}
@@ -382,7 +383,7 @@ func BenchmarkAEAD_AES_128_GCM(b *testing.B) {
 		panic(err)
 	}
 
-	data := make([]byte, 1400, mtuLimit)
+	data := make([]byte, 1400, kcp2.mtuLimit)
 	b.SetBytes(1400)
 
 	nonce := data[:aead.NonceSize()]
@@ -394,29 +395,29 @@ func BenchmarkAEAD_AES_128_GCM(b *testing.B) {
 }
 
 func BenchmarkCFB_Salsa20_CRC32(b *testing.B) {
-	bc, err := NewSalsa20BlockCrypt(pass[:32])
+	bc, err := NewSalsa20BlockCrypt(kcp2.pass[:32])
 	if err != nil {
 		b.Fatal(err)
 		return
 	}
 
-	data := make([]byte, 1400, mtuLimit)
+	data := make([]byte, 1400, kcp2.mtuLimit)
 	b.SetBytes(1400)
 
 	for b.Loop() {
-		checksum := crc32.ChecksumIEEE(data[cryptHeaderSize:])
-		binary.LittleEndian.PutUint32(data[nonceSize:cryptHeaderSize], checksum)
+		checksum := crc32.ChecksumIEEE(data[kcp2.cryptHeaderSize:])
+		binary.LittleEndian.PutUint32(data[kcp2.nonceSize:kcp2.cryptHeaderSize], checksum)
 		bc.Encrypt(data, data)
 	}
 }
 
 func BenchmarkAEAD_Chacha20_Poly1035(b *testing.B) {
-	aead, err := chacha20poly1305.New(pass[:32])
+	aead, err := chacha20poly1305.New(kcp2.pass[:32])
 	if err != nil {
 		panic(err)
 	}
 
-	data := make([]byte, 1400, mtuLimit)
+	data := make([]byte, 1400, kcp2.mtuLimit)
 	b.SetBytes(1400)
 
 	nonce := data[:aead.NonceSize()]

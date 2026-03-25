@@ -1,4 +1,4 @@
-module github.com/xtaci/kcp-go/v5
+module github.com/andrewbytecoder/kcp-go
 
 require (
 	github.com/google/gopacket v1.1.19

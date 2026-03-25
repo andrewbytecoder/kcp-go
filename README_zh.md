@@ -1,4 +1,4 @@
-<img src="assets/kcp-go.png" alt="kcp-go" height="100px" />
+<img src="manifest/assets/kcp-go.png" alt="kcp-go" height="100px" />
 
 
 ```bash
@@ -76,7 +76,7 @@ export CGO_ENABLED=1
 
 ### KCP-GO 分层模型
 
-<img src="assets/layermodel.jpg" alt="layer-model" />
+<img src="manifest/assets/layermodel.jpg" alt="layer-model" />
 
 ## 关键设计考量
 
@@ -150,7 +150,7 @@ kcp-go 仍需警惕的攻击面包括：
 
 下图展示了完整帧格式，便于与 Wireshark 等工具对照：
 
-<img src="assets/frame.png" alt="Frame Format" height="109px" />
+<img src="manifest/assets/frame.png" alt="Frame Format" height="109px" />
 
 ```
 NONCE:
@@ -370,7 +370,7 @@ ok      github.com/xtaci/kcp-go/v5      64.151s
 ## 典型火焰图
 
 下图为 kcptun 运行时采集的典型 CPU 火焰图，可用来定位热点函数和锁竞争：
-![Flame Graph in kcptun](assets/flame.png)
+![Flame Graph in kcptun](manifest/assets/flame.png)
 
 
 

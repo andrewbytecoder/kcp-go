@@ -131,7 +131,7 @@ func TestFECDecodeLoss(t *testing.T) {
 			}
 		}
 
-		// the recovered packets should equal to the lost data packets
+		// the recovered packets should equal to the lost Data packets
 		if recovered != lost-parityLost {
 			t.Fatalf("Expected recovered %v packets, got %v", lost-parityLost, recovered)
 		}
@@ -287,18 +287,18 @@ func TestFECPAWS(t *testing.T) {
 	var packets []fecPacket
 
 	// 1. Encode the last group before PAWS
-	// This will generate 'dataShards' data packets and 'parityShards' parity packets.
+	// This will generate 'dataShards' Data packets and 'parityShards' parity packets.
 	// Total 'shardSize' packets.
 	// Their seqids should be [paws-shardSize, ..., paws-1]
 	for i := range dataShards {
 		data := make([]byte, payLoad)
-		// We can put some recognizable data
+		// We can put some recognizable Data
 		// Note: fecEncoder writes header at 0-6, and size at 6-8. Payload starts at 8.
 		binary.LittleEndian.PutUint32(data[8:], uint32(i))
 
 		ps := encoder.encode(data, 200)
 
-		// Copy data packet
+		// Copy Data packet
 		pkt := make([]byte, len(data))
 		copy(pkt, data)
 		packets = append(packets, fecPacket(pkt))
@@ -326,7 +326,7 @@ func TestFECPAWS(t *testing.T) {
 	startIdx := len(packets)
 	for i := range dataShards {
 		data := make([]byte, payLoad)
-		binary.LittleEndian.PutUint32(data[8:], uint32(i+100)) // Different data
+		binary.LittleEndian.PutUint32(data[8:], uint32(i+100)) // Different Data
 
 		ps := encoder.encode(data, 200)
 
@@ -352,7 +352,7 @@ func TestFECPAWS(t *testing.T) {
 	t.Log("Group 2 generated successfully")
 
 	// 3. Feed to decoder with some loss
-	// We will lose the last data packet of Group 1 and the first data packet of Group 2
+	// We will lose the last Data packet of Group 1 and the first Data packet of Group 2
 	// to test recovery across the boundary (though recovery is per-group).
 
 	// We drop index 9 (seqid paws-4) and index 13 (seqid 0).
@@ -376,7 +376,7 @@ func TestFECPAWS(t *testing.T) {
 			t.Logf("Recovered %v packets at step %v (seqid %v)", len(recovered), i, pkt.seqid())
 			recoveredCount += len(recovered)
 			for _, r := range recovered {
-				// Verify recovered data
+				// Verify recovered Data
 				// r[0:2] is size. r[2:] is payload.
 				val := binary.LittleEndian.Uint32(r[2:])
 				if val == 9 {
@@ -384,7 +384,7 @@ func TestFECPAWS(t *testing.T) {
 				} else if val == 100 {
 					t.Log("Recovered packet 13 (val 100) correctly")
 				} else {
-					t.Errorf("Recovered unexpected data: %v", val)
+					t.Errorf("Recovered unexpected Data: %v", val)
 				}
 			}
 		}
@@ -455,7 +455,7 @@ func TestFECRTOAndSkipParity(t *testing.T) {
 	// Send 2 packets quickly, then sleep, then send 3rd
 	t.Log("--- Scenario 2: Timeout case (Time > RTO) ---")
 
-	// Packet 3 (Next data seq should be 5)
+	// Packet 3 (Next Data seq should be 5)
 	p3 := make([]byte, 100)
 	ps = enc.encode(p3, rto)
 	if len(ps) != 0 {
@@ -491,7 +491,7 @@ func TestFECRTOAndSkipParity(t *testing.T) {
 	}
 
 	// Even though parity was skipped, the sequence ID should have advanced by parityShards (2)
-	// So next data packet should be 7 + 1 (current) + 2 (skipped parity) = 10?
+	// So next Data packet should be 7 + 1 (current) + 2 (skipped parity) = 10?
 	// Wait, let's trace:
 	// p5 gets seq 7.
 	// encode() calls skipParity() -> enc.next += parityShards.

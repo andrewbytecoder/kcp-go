@@ -656,7 +656,7 @@ func TestClose(t *testing.T) {
 		return
 	}
 
-	// wait until data arrival
+	// wait until Data arrival
 	time.Sleep(2 * time.Second)
 	// drain
 	cli.Close()
@@ -927,7 +927,7 @@ func TestUDPSessionNonOwnedPacketConn(t *testing.T) {
 	}
 }
 
-// this function test the data correctness with FEC and encryption enabled
+// this function test the Data correctness with FEC and encryption enabled
 func TestReliability(t *testing.T) {
 	port := nextPort()
 	block1, _ := NewSalsa20BlockCrypt(pass)
@@ -1061,7 +1061,7 @@ func TestSessionReadAfterClosed(t *testing.T) {
 	check(c1, c2)
 	c1.Close()
 	c2.Close()
-	// log.Println("conv id 0 is closed")
+	// log.Println("Conv id 0 is closed")
 
 	c1, err = NewConn3(4321, uc.LocalAddr(), nil, 0, 0, us)
 	if err != nil {
@@ -1326,18 +1326,18 @@ func TestListenDial(t *testing.T) {
 	}
 	t.Log("Dialed")
 	conn.Write([]byte("hello"))
-	t.Log("Wrote data")
+	t.Log("Wrote Data")
 	time.Sleep(100 * time.Millisecond)
 	conn.Close()
 	<-ch
 }
 
-// TestOOB verifies the end-to-end transmission and reception of OOB (Out-Of-Band) data:
-// 1. The server registers an OOB callback and echoes back any received OOB data.
-// 2. The client registers an OOB callback to validate the content and length of echoed OOB data.
-// 3. The client sends OOB data of varying lengths in a loop, counting the number of echoes for each length.
-// 4. Finally, it checks that all lengths of OOB data are correctly echoed back.
-// This test ensures the OOB data channel is functional and the content is accurate.
+// TestOOB verifies the end-to-end transmission and reception of OOB (Out-Of-Band) Data:
+// 1. The server registers an OOB callback and echoes back any received OOB Data.
+// 2. The client registers an OOB callback to validate the content and length of echoed OOB Data.
+// 3. The client sends OOB Data of varying lengths in a loop, counting the number of echoes for each length.
+// 4. Finally, it checks that all lengths of OOB Data are correctly echoed back.
+// This test ensures the OOB Data channel is functional and the content is accurate.
 func TestOOB(t *testing.T) {
 	port := nextPort()
 	block1, _ := NewAESGCMCrypt(pass)
@@ -1349,7 +1349,7 @@ func TestOOB(t *testing.T) {
 	defer l.Close()
 
 	go func() {
-		// Server listens for OOB data and echoes it back
+		// Server listens for OOB Data and echoes it back
 		kcplistener := l.(*Listener)
 		kcplistener.SetReadBuffer(4 * 1024 * 1024)
 		kcplistener.SetWriteBuffer(4 * 1024 * 1024)
@@ -1361,7 +1361,7 @@ func TestOOB(t *testing.T) {
 			sess := s.(*UDPSession)
 			sess.SetReadBuffer(4 * 1024 * 1024)
 			sess.SetWriteBuffer(4 * 1024 * 1024)
-			// Register OOB callback, echo back received OOB data immediately
+			// Register OOB callback, echo back received OOB Data immediately
 			sess.SetOOBHandler(func(buf []byte) {
 				if err := sess.SendOOB(buf); err != nil {
 					t.Errorf("server failed to echo OOB payload: %v", err)
@@ -1388,7 +1388,7 @@ func TestOOB(t *testing.T) {
 	sizePlus1 := size + 1
 	counts := make([]atomic.Int32, sizePlus1)
 
-	// Client registers OOB callback to validate echoed OOB data content and length
+	// Client registers OOB callback to validate echoed OOB Data content and length
 	cli.SetOOBHandler(func(buf []byte) {
 		for i, b := range buf {
 			if b != byte(i) {
@@ -1407,13 +1407,13 @@ func TestOOB(t *testing.T) {
 
 	go func() {
 		defer wg.Done()
-		// Stress test for normal data channel to ensure main channel does not affect OOB
+		// Stress test for normal Data channel to ensure main channel does not affect OOB
 		randomEchoTest(t, cli, 10*1024*1024)
 	}()
 
 	go func() {
 		defer wg.Done()
-		// Send OOB data of varying lengths in a loop, content is [0,1,2,...]
+		// Send OOB Data of varying lengths in a loop, content is [0,1,2,...]
 		buf := make([]byte, size)
 		for i := range len(buf) {
 			buf[i] = byte(i)
@@ -1427,7 +1427,7 @@ func TestOOB(t *testing.T) {
 
 	wg.Wait()
 
-	// Check that all lengths of OOB data are correctly echoed back
+	// Check that all lengths of OOB Data are correctly echoed back
 	for i := range counts {
 		if counts[i].Load() == 0 {
 			t.Errorf("missing OOB echo for payload length %d", i)
@@ -1435,7 +1435,7 @@ func TestOOB(t *testing.T) {
 	}
 }
 
-// TestOOB_OneSideHandler verifies that OOB data can be received and processed
+// TestOOB_OneSideHandler verifies that OOB Data can be received and processed
 // when only the server sets the OOB handler and the client does not.
 //
 // The server OOB handler updates the shared 'counts' slice, which is initialized
@@ -1527,7 +1527,7 @@ func TestOOB_OneSideHandler(t *testing.T) {
 	default:
 	}
 
-	// Check that all lengths of OOB data are received by the server.
+	// Check that all lengths of OOB Data are received by the server.
 	for i := range counts[:sizePlus1] {
 		if counts[i].Load() == 0 {
 			t.Errorf("server missing OOB for payload length %d", i)
