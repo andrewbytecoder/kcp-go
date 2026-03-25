@@ -2,8 +2,6 @@ package main
 
 import (
 	"crypto/sha1"
-	"encoding/binary"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net"
