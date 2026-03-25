@@ -57,7 +57,7 @@ func (bp *bufferPool) Get() []byte {
 // Put returns a buffer to the pool.
 func (bp *bufferPool) Put(buf []byte) error {
 	// Only put back buffers of the correct size.
-	if cap(buf) != kcp.mtuLimit {
+	if cap(buf) != mtuLimit {
 		return errBufferSizeMismatch
 	}
 	bp.xmitBuf.Put(buf[:cap(buf)]) // reset slice length to full capacity
