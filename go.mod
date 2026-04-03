@@ -1,7 +1,7 @@
 module github.com/andrewbytecoder/kcp-go
 
 require (
-	github.com/containerd/cgroups v1.1.0
+	github.com/containerd/cgroups v1.0.0
 	github.com/dustin/go-humanize v1.0.1
 	github.com/fatih/color v1.19.0
 	github.com/google/gopacket v1.1.19
