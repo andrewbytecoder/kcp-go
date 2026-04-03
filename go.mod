@@ -1,13 +1,13 @@
 module github.com/andrewbytecoder/kcp-go
 
 require (
-	github.com/containerd/cgroups v1.0.0
+	github.com/containerd/cgroups v1.1.0
 	github.com/dustin/go-humanize v1.0.1
 	github.com/fatih/color v1.19.0
 	github.com/google/gopacket v1.1.19
 	github.com/klauspost/reedsolomon v1.12.0
 	github.com/olekukonko/tablewriter v1.1.4
-	github.com/opencontainers/runtime-spec v1.3.0
+	github.com/opencontainers/runtime-spec v1.2.1
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.4
 	github.com/spf13/cast v1.10.0
