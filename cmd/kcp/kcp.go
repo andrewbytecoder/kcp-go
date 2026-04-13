@@ -6,10 +6,10 @@ import (
 	"log"
 	"net"
 
+	"github.com/andrewbytecoder/gopacket"
+	"github.com/andrewbytecoder/gopacket/layers"
+	"github.com/andrewbytecoder/gopacket/pcap"
 	"github.com/andrewbytecoder/kcp-go/pkg/kcp"
-	"github.com/google/gopacket"
-	"github.com/google/gopacket/layers"
-	"github.com/google/gopacket/pcap"
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/pbkdf2"
 )
