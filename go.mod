@@ -4,7 +4,7 @@ require (
 	github.com/containerd/cgroups v1.1.0
 	github.com/dustin/go-humanize v1.0.1
 	github.com/fatih/color v1.19.0
-	github.com/andrewbytecoder/gopacket v1.2.1
+	github.com/andrewbytecoder/gopacket v1.2.2
 	github.com/klauspost/reedsolomon v1.12.0
 	github.com/olekukonko/tablewriter v1.1.4
 	github.com/opencontainers/runtime-spec v1.2.1
